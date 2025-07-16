@@ -677,7 +677,14 @@ async function getSources(embed_url, site) {
         await V();
         let getSourcesUrl = '';
         if (base_url.includes('mega')) {
-            getSourcesUrl = base_url + '/embed-2/v2/e-1/getSources?id=' + xrax;
+            const resourceLinkMatch = embed_url.match(/https:\/\/([^/]+)\/embed-2\/(v\d+)\/e-1\/([^?]+)/);
+            if (!resourceLinkMatch) {
+                console.error('[!] Failed to extract domain and ID from link:', embed_url);
+                process.exit(1);
+            }
+            const version = resourceLinkMatch[2];
+            const id = resourceLinkMatch[3];
+            getSourcesUrl = base_url + '/embed-2/' + version + '/e-1/getSources?id=' + id;
         }
         else {
             getSourcesUrl =
@@ -699,7 +706,6 @@ async function getSources(embed_url, site) {
         let resp_json = await (await fetch(getSourcesUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
-                //"Referrer": fake_window.origin + "/v2/embed-4/" + xrax + "?z=",
                 Referer: site,
                 'X-Requested-With': 'XMLHttpRequest',
             },
