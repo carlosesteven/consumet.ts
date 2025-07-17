@@ -731,8 +731,13 @@ async function getSources(embed_url, site) {
         }
         console.log('\n\n- data.sources:', data.sources);
         console.log('\n\n- Key: ', keyToUse);
-        // @ts-ignore
-        resp_json.sources = M(data.sources, keyToUse);
+        const encrypted = data === null || data === void 0 ? void 0 : data.encrypted;
+        if (encrypted) {
+            resp_json.sources = M(data.sources, keyToUse);
+        }
+        else {
+            resp_json.sources = data.sources;
+        }
         console.log('\n\n- resp_json.sources:', resp_json.sources);
         return resp_json;
     }

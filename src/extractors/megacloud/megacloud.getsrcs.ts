@@ -46,6 +46,12 @@ interface fakeWindow {
   [key: string]: any;
 }
 
+// Define esto arriba en tu archivo o en un archivo de tipos
+export interface extractedSources {
+  file: string;
+  type: string;
+}
+
 const canvas = {
   baseUrl: 'https://megacloud.blog/embed-2/v2/e-1/1hnXq7VzX0Ex?k=1',
   width: 0,
@@ -801,8 +807,13 @@ export async function getSources(embed_url: string, site: string) {
 
     console.log('\n\n- Key: ', keyToUse);
 
-    // @ts-ignore
-    resp_json.sources = M(data.sources, keyToUse) as extractedSources[];
+    const encrypted = data?.encrypted;
+
+    if (encrypted) {
+      resp_json.sources = M(data.sources, keyToUse) as extractedSources[];
+    } else {
+      resp_json.sources = data.sources;
+    }
 
     console.log('\n\n- resp_json.sources:', resp_json.sources);
 
