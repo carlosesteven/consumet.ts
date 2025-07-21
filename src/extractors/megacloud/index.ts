@@ -1,5 +1,6 @@
 import { ISource, IVideo, VideoExtractor } from '../../models';
 import { getSources } from './megacloud.getsrcs';
+import { getSourcesV3 } from './megacloud.v3';
 
 class MegaCloud extends VideoExtractor {
   protected override serverName = 'MegaCloud';
@@ -20,7 +21,7 @@ class MegaCloud extends VideoExtractor {
         sources: [],
       };
 
-      const resp = await getSources(embedIframeURL.href, referer);
+      const resp = await getSourcesV3(embedIframeURL.href, referer);
 
       if (!resp) return extractedData;
 

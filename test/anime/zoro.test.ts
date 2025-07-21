@@ -166,6 +166,7 @@ test('returns a filled object of episode sources of multiple episodes', async ()
     'rezero-starting-life-in-another-world-season-3-19301$episode$128356$both'
   );
   expect(data1.sources).not.toEqual([]);
+  console.log('data1: ', data1);
 });
 
 /*
