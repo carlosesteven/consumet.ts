@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("../../models");
+const megacloud_getsrcs_1 = require("./megacloud.getsrcs");
 const megacloud_v3_1 = require("./megacloud.v3");
 class MegaCloud extends models_1.VideoExtractor {
     constructor() {
@@ -22,7 +23,13 @@ class MegaCloud extends models_1.VideoExtractor {
                 },
                 sources: [],
             };
-            const resp = await (0, megacloud_v3_1.getSourcesV3)(embedIframeURL.href, referer);
+            let resp = null;
+            try {
+                resp = await (0, megacloud_v3_1.getSourcesV3)(embedIframeURL.href, referer);
+            }
+            catch (e) {
+                resp = await (0, megacloud_getsrcs_1.getSources)(embedIframeURL.href, referer);
+            }
             if (!resp)
                 return extractedData;
             if (Array.isArray(resp.sources)) {
