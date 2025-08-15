@@ -9,7 +9,7 @@ export async function getSourcesV3(embed_url: string, site: string) {
 
   const version = resourceLinkMatch[2];
 
-  const apiUrl = `http://127.0.0.1:8446/api?id=${id}&version=${version}`;
+  const apiUrl = `http://127.0.0.1:8446/distribute?id=${id}&version=${version}`;
 
   const response = await fetch(apiUrl);
 
