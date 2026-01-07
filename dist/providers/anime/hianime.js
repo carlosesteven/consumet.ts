@@ -154,7 +154,7 @@ class Hianime extends models_1.AnimeParser {
                     case models_1.StreamingServers.VidCloud:
                         return {
                             headers: { Referer: serverUrl.href },
-                            ...(await new extractors_1.MegaCloud().extract(serverUrl)),
+                            ...(await new extractors_1.MegaCloud().extract_CSC_LAB(serverUrl)),
                         };
                     case models_1.StreamingServers.StreamSB:
                         return {
@@ -174,7 +174,7 @@ class Hianime extends models_1.AnimeParser {
                     case models_1.StreamingServers.VidCloud:
                         return {
                             headers: { Referer: serverUrl.href },
-                            ...(await new extractors_1.MegaCloud().extract(serverUrl)),
+                            ...(await new extractors_1.MegaCloud().extract_CSC_LAB(serverUrl)),
                         };
                 }
             }

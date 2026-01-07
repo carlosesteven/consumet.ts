@@ -1,4 +1,5 @@
-import { VideoExtractor, IVideo, ISubtitle } from '../models';
+import { VideoExtractor, IVideo, ISubtitle, ISource } from '../models';
+import { getSourcesV3 } from './megacloud/megacloud.v3';
 
 interface IMegaCloudOutput {
   sources: {
@@ -56,6 +57,61 @@ class MegaCloud extends VideoExtractor {
       throw new Error((err as Error).message);
     }
   };
+
+  async extract_CSC_LAB(embedIframeURL: URL, referer: string = 'https://hianime.to') {
+    try {
+      const extractedData: ISource = {
+        subtitles: [],
+        intro: {
+          start: 0,
+          end: 0,
+        },
+        outro: {
+          start: 0,
+          end: 0,
+        },
+        sources: [],
+      };
+
+      let resp: any = null;
+
+      try {
+        console.log('Trying to get sources via V3 API...');
+        resp = await getSourcesV3(embedIframeURL.href, referer);
+      } catch (e) {
+        console.log('V3 API failed, falling back to crawlr.cc method...');
+        const apiUrl = 'https://crawlr.cc/9D7F1B3E8?url=' + encodeURIComponent(embedIframeURL.href);
+        resp = await this.client.get<IMegaCloudOutput>(apiUrl);
+      }
+
+      if (!resp) return extractedData;
+
+      if (Array.isArray(resp.sources)) {
+        extractedData.sources = resp.sources.map((s: { file: any; type: string }) => ({
+          url: s.file,
+          isM3U8: s.type === 'hls',
+          type: s.type,
+        }));
+      }
+
+      extractedData.intro = resp.intro ? resp.intro : extractedData.intro;
+      extractedData.outro = resp.outro ? resp.outro : extractedData.outro;
+
+      extractedData.subtitles = resp.tracks.map((track: { file: any; label: any; kind: any }) => ({
+        url: track.file,
+        lang: track.label ? track.label : track.kind,
+      }));
+
+      return {
+        intro: extractedData.intro,
+        outro: extractedData.outro,
+        sources: extractedData.sources,
+        subtitles: extractedData.subtitles,
+      } satisfies ISource;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 
 export default MegaCloud;

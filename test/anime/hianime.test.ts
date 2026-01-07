@@ -125,6 +125,7 @@ test('fetchEpisodeSources: returns a filled object of episode sources', async ()
   const info = await hianime.fetchAnimeInfo('overlord-ple-ple-pleiades-3543');
   if (info.episodes && info.episodes.length > 0) {
     const data = await hianime.fetchEpisodeSources(info.episodes[0].id);
+    console.log('data: ', data);
     expect(data.sources).not.toEqual([]);
   } else {
     expect(true).toBe(true);

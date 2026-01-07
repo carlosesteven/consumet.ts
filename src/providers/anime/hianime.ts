@@ -677,7 +677,7 @@ class Hianime extends AnimeParser {
         case StreamingServers.VidCloud:
           return {
             headers: { Referer: serverUrl.href },
-            ...(await new MegaCloud().extract(serverUrl)),
+            ...(await new MegaCloud().extract_CSC_LAB(serverUrl)),
           };
         case StreamingServers.StreamSB:
           return {
@@ -697,7 +697,7 @@ class Hianime extends AnimeParser {
         case StreamingServers.VidCloud:
           return {
             headers: { Referer: serverUrl.href },
-            ...(await new MegaCloud().extract(serverUrl)),
+            ...(await new MegaCloud().extract_CSC_LAB(serverUrl)),
           };
       }
     }
