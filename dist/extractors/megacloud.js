@@ -56,11 +56,11 @@ class MegaCloud extends models_1.VideoExtractor {
             };
             let resp = null;
             try {
-                console.log('Trying to get sources via V3 API...');
+                console.log('\n- Megacloud: CSC_LAB API');
                 resp = await (0, megacloud_v3_1.getSourcesV3)(embedIframeURL.href, referer);
             }
             catch (e) {
-                console.log('V3 API failed, falling back to crawlr.cc method...');
+                console.log('\n- Megacloud: CSC_LAB API failed, falling back to Crawlr');
                 const apiUrl = 'https://crawlr.cc/9D7F1B3E8?url=' + encodeURIComponent(embedIframeURL.href);
                 resp = await this.client.get(apiUrl);
             }
