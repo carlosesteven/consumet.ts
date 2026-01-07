@@ -1,4 +1,3 @@
-import { AxiosAdapter } from 'axios';
 import { CheerioAPI, load } from 'cheerio';
 
 import {
@@ -11,12 +10,11 @@ import {
   StreamingServers,
   MediaFormat,
   SubOrSub,
-  IAnimeEpisode,
   MediaStatus,
   Intro,
 } from '../../models';
 
-import { MegaUp } from '../../utils';
+import { MegaUp } from '../../extractors';
 
 const { GenerateToken, DecodeIframeData } = new MegaUp();
 
@@ -27,22 +25,11 @@ class AnimeKai extends AnimeParser {
     'https://anikai.to//assets/uploads/37585a39fe8c8d8fafaa2c7bfbf5374ecac859ea6a0288a6da2c61f5.png';
   protected override classPath = 'ANIME.AnimeKai';
 
-  constructor(customBaseURL?: string) {
-    super(...arguments);
-    if (customBaseURL) {
-      if (customBaseURL.startsWith('http://') || customBaseURL.startsWith('https://')) {
-        this.baseUrl = customBaseURL;
-      } else {
-        this.baseUrl = `http://${customBaseURL}`;
-      }
-    } else {
-      this.baseUrl = this.baseUrl;
-    }
-  }
-
   /**
-   * @param query Search query
-   * @param page Page number (optional)
+   * Search for anime
+   * @param query Search query string
+   * @param page Page number (default: 1)
+   * @returns Promise<ISearch<IAnimeResult>>
    */
   override search(query: string, page: number = 1): Promise<ISearch<IAnimeResult>> {
     if (0 >= page) {
@@ -185,9 +172,15 @@ class AnimeKai extends AnimeParser {
         )}`,
         { headers: this.Headers() }
       );
-      const $ = load(data.result);
 
-      $('ul.collapsed li').each((i, ele) => {
+      let htmlContent = data.result || data;
+      if (typeof htmlContent === 'object' && htmlContent.html) {
+        htmlContent = htmlContent.html;
+      }
+
+      const $ = load(htmlContent);
+
+      $('ul li').each((i, ele) => {
         const card = $(ele);
         const titleElement = card.find('span.title');
         const episodeText = card.find('span').last().text().trim();
@@ -200,9 +193,9 @@ class AnimeKai extends AnimeParser {
           airingEpisode: episodeText.replace('EP ', ''), // Extract episode number
         });
       });
-
       return res;
     } catch (err) {
+      console.error('Schedule fetch error:', err);
       throw new Error('Something went wrong. Please try again later.');
     }
   }
@@ -299,7 +292,9 @@ class AnimeKai extends AnimeParser {
   }
 
   /**
-   * @param id Anime id
+   * Fetch anime information
+   * @param id Anime ID/slug
+   * @returns Promise<IAnimeInfo>
    */
   override fetchAnimeInfo = async (id: string): Promise<IAnimeInfo> => {
     const info: IAnimeInfo = {
@@ -440,10 +435,11 @@ class AnimeKai extends AnimeParser {
   };
 
   /**
-   *
-   * @param episodeId Episode id
-   * @param server server type (default `VidCloud`) (optional)
-   * @param subOrDub sub or dub (default `SubOrSub.SUB`) (optional)
+   * Fetch episode video sources
+   * @param episodeId Episode ID
+   * @param server Server type (default: VidCloud)
+   * @param subOrDub Sub or dub preference (default: SUB)
+   * @returns Promise<ISource>
    */
   override fetchEpisodeSources = async (
     episodeId: string,
@@ -527,6 +523,7 @@ class AnimeKai extends AnimeParser {
       }
       return res;
     } catch (err) {
+      console.error('scrapeCardPage error for URL:', url, 'Error:', (err as Error).message);
       throw new Error('Something went wrong. Please try again later.');
     }
   };
@@ -543,6 +540,7 @@ class AnimeKai extends AnimeParser {
         const atag = card.find('div.inner > a');
         const id = atag.attr('href')?.replace('/watch/', '');
         const type = card.find('.info').children().last()?.text().trim();
+
         results.push({
           id: id!,
           title: atag.text().trim(),
@@ -560,14 +558,18 @@ class AnimeKai extends AnimeParser {
             ) || 0, //if no direct episode count, then just use sub count
         });
       });
+
       return results;
     } catch (err) {
+      console.error('scrapeCard error:', err);
       throw new Error('Something went wrong. Please try again later.');
     }
   };
   /**
-   * @param episodeId Episode id
-   * @param subOrDub sub or dub (default `sub`) (optional)
+   * Fetch available episode servers
+   * @param episodeId Episode ID
+   * @param subOrDub Sub or dub preference (default: SUB)
+   * @returns Promise<IEpisodeServer[]>
    */
   override fetchEpisodeServers = async (
     episodeId: string,
@@ -630,16 +632,5 @@ class AnimeKai extends AnimeParser {
     };
   }
 }
-
-// (async () => {
-//   const animekai = new AnimeKai();
-//   const anime = await animekai.search('cyberpunk edgerunners');
-//   const info = await animekai.fetchAnimeInfo(anime.results[0].id);
-//   // console.log(info.episodes);
-//   const servers = await animekai.fetchEpisodeServers(info?.episodes![0].id!);
-//   console.log(servers)
-//   const sources = await animekai.fetchEpisodeSources(info?.episodes![0].id!,servers[0].name as StreamingServers);
-//   console.log(sources);
-// })();
 
 export default AnimeKai;

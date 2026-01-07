@@ -1,5 +1,5 @@
 import { AxiosAdapter } from 'axios';
-import { AnimeParser, ISearch, IAnimeInfo, IAnimeResult, ISource, IAnimeEpisode, IEpisodeServer, Genres, MangaParser, IMangaChapterPage, IMangaInfo, IMangaResult, ProxyConfig, IStaff } from '../../models';
+import { AnimeParser, ISearch, IAnimeInfo, IAnimeResult, ISource, IAnimeEpisode, IEpisodeServer, Genres, MangaParser, IMangaChapterPage, IMangaInfo, IMangaResult, IMangaChapter, ProxyConfig, IStaff } from '../../models';
 declare class Anilist extends AnimeParser {
     proxyConfig?: ProxyConfig | undefined;
     readonly name = "Anilist";
@@ -18,7 +18,16 @@ declare class Anilist extends AnimeParser {
      * @param proxyConfig proxy config (optional)
      * @param adapter axios adapter (optional)
      */
-    constructor(provider?: AnimeParser, proxyConfig?: ProxyConfig | undefined, adapter?: AxiosAdapter, customBaseURL?: string);
+    constructor(provider?: AnimeParser, proxyConfig?: ProxyConfig | undefined, adapter?: AxiosAdapter);
+    /**
+     * @param authToken Anilist auth token
+     * @param type Type of favorites to fetch: 'ANIME', 'MANGA', or 'BOTH' (default: 'BOTH')
+     * @returns favorite lists
+     */
+    fetchFavoriteList: (authToken: string, type?: "ANIME" | "MANGA" | "BOTH") => Promise<{
+        anime?: IAnimeInfo[];
+        manga?: IAnimeInfo[];
+    }>;
     /**
      * @param query Search query
      * @param page Page number (optional)
@@ -38,8 +47,9 @@ declare class Anilist extends AnimeParser {
      * @param year Year (optional) e.g. `2022`
      * @param status Status (optional) (options: `RELEASING`, `FINISHED`, `NOT_YET_RELEASED`, `CANCELLED`, `HIATUS`)
      * @param season Season (optional) (options: `WINTER`, `SPRING`, `SUMMER`, `FALL`)
+     * @param countryOfOrigin Country of origin (optional)
      */
-    advancedSearch: (query?: string, type?: string, page?: number, perPage?: number, format?: string, sort?: string[], genres?: Genres[] | string[], id?: string | number, year?: number, status?: string, season?: string) => Promise<ISearch<IAnimeResult>>;
+    advancedSearch: (query?: string, type?: string, page?: number, perPage?: number, format?: string, sort?: string[], genres?: Genres[] | string[], id?: string | number, year?: number, status?: string, season?: string, countryOfOrigin?: string) => Promise<ISearch<IAnimeResult>>;
     /**
      *
      * @param id Anime id
@@ -94,11 +104,11 @@ declare class Anilist extends AnimeParser {
      */
     fetchRandomAnime: () => Promise<IAnimeInfo>;
     /**
-     * @param provider The provider to get the episode Ids from (optional) default: `gogoanime` (options: `gogoanime`, `zoro`)
+     * @param provider The provider to get the episode Ids from (optional) default: `gogoanime` (options: `gogoanime`, `Hianime`)
      * @param page page number (optional)
      * @param perPage number of results per page (optional)
      */
-    fetchRecentEpisodes: (provider?: "gogoanime" | "zoro", page?: number, perPage?: number) => Promise<ISearch<IAnimeResult>>;
+    fetchRecentEpisodes: (provider?: "gogoanime" | "Hianime", page?: number, perPage?: number) => Promise<ISearch<IAnimeResult>>;
     private fetchDefaultEpisodeList;
     /**
      * @param id anilist id
@@ -185,6 +195,7 @@ declare class Anilist extends AnimeParser {
              * @returns
              */
             fetchChapterPages: (chapterId: string, ...args: any) => Promise<IMangaChapterPage[]>;
+            fetchChaptersList: (mangaId: string, ...args: any) => Promise<IMangaChapter[]>;
             fetchMangaInfo: (id: string, ...args: any) => Promise<IMangaInfo>;
         };
     };

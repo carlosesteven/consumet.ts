@@ -1,13 +1,8 @@
-// import sharp from 'sharp';
 import { load } from 'cheerio';
-// import * as blurhash from 'blurhash';
-import { ProxyConfig } from '../models';
-import axios, { AxiosRequestConfig } from 'axios';
 
 export const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36';
 export const days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-export const ANIFY_URL = 'https://anify.eltik.cc';
 
 export const splitAuthor = (authors: string) => {
   const res: string[] = [];
@@ -155,26 +150,200 @@ export const substringBeforeLast = (str: string, toFind: string) => {
   return index == -1 ? '' : str.substring(0, index);
 };
 
-// const generateHash = async (url: string) => {
-//   let returnedBuffer;
-
-//   const response = await fetch(url);
-//   const arrayBuffer = await response.arrayBuffer();
-//   returnedBuffer = Buffer.from(arrayBuffer);
-
-//   // const { info, data } = await sharp(returnedBuffer).ensureAlpha().raw().toBuffer({
-//   //   resolveWithObject: true,
-//   // });
-
-//   return blurhash.encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3);
-// };
-
 export const getHashFromImage = (url: string) => {
   if (url?.length === 0) {
     return '';
   } else {
     let hash!: string;
-    // generateHash(url).then(hashKey => (hash = hashKey));
     return 'hash';
   }
 };
+
+export const safeUnpack = (packedSource: string): string => {
+  try {
+    // 1. Extract arguments using Regex
+    // Matches: }('...', radix, count, 'keywords'
+    const argsRegex = /}\s*\(\s*'((?:[^'\\]|\\.)*)'\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*'((?:[^'\\]|\\.)*)'\./;
+    const match = argsRegex.exec(packedSource);
+
+    if (!match) throw new Error('Invalid Packer format or unable to parse safely.');
+
+    let [_, p, aStr, cStr, kStr] = match;
+    const a = parseInt(aStr); // Radix
+    const c = parseInt(cStr); // Count
+    let k = kStr.split('|'); // Keywords
+
+    // 2. Base62 Helper (The 'e' function in packer)
+    const base62 = (n: number): string => {
+      const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      return n < a ? chars[n] : base62(Math.floor(n / a)) + chars[n % a];
+    };
+
+    // 3. Dictionary Fill (Logic: if k[i] is empty, it maps to base62(i))
+    // However, standard packer usually provides full dictionary or handles empty slots dynamically.
+    // Simple optimization: standard packer replaces based on index.
+
+    const dict: Record<string, string> = {};
+    for (let i = 0; i < c; i++) {
+      const key = base62(i);
+      const word = k[i] || key; // Fallback if empty
+      dict[key] = word;
+    }
+
+    // 4. Substitution
+    // Regex: /\b\w+\b/g but compliant with packer generated tokens
+    return p.replace(/\b\w+\b/g, word => {
+      return dict[word] || word;
+    });
+  } catch (err) {
+    throw new Error(`Failed to unpack script: ${err}`);
+  }
+};
+
+export const parsePostInfo = (post: string) => {
+  let year = '';
+  let size = '';
+  let description = '';
+  let sizeDone = false;
+  for (let i = 0; i < post.length; i++) {
+    if (
+      i + 5 < post.length &&
+      post[i] == 'Y' &&
+      post[i + 1] == 'e' &&
+      post[i + 2] == 'a' &&
+      post[i + 3] == 'r' &&
+      post[i + 4] == ' ' &&
+      post[i + 5] == ':'
+    ) {
+      year = post[i + 7] + post[i + 8] + post[i + 9] + post[i + 10];
+      i += 9;
+    } else if (
+      i + 5 < post.length &&
+      post[i] == 'S' &&
+      post[i + 1] == 'i' &&
+      post[i + 2] == 'z' &&
+      post[i + 3] == 'e' &&
+      post[i + 4] == ' ' &&
+      post[i + 5] == ':'
+    ) {
+      let j = i + 7;
+      const temp = j;
+      for (; j < temp + 4; j++) {
+        if (!isNaN(Number(post[j]))) {
+          size += post[j];
+        } else {
+          break;
+        }
+      }
+      size += post[j] + post[j + 1];
+      i += j - i;
+      i += 2;
+      sizeDone = true;
+    }
+    if (sizeDone) {
+      description += post[i];
+    }
+  }
+  description = description.substring(0, description.length - 12);
+  return { year, size, description };
+};
+
+// Function to find similar titles
+export function findSimilarTitles(inputTitle: string, titles: any[]): any[] {
+  const results: (any & { similarity: number })[] = [];
+
+  titles?.forEach((titleObj: any) => {
+    const title = cleanTitle(
+      titleObj?.title
+        ?.toLowerCase()
+        ?.replace(/\([^\)]*\)/g, '')
+        .trim() || ''
+    );
+
+    // Calculate similarity score between inputTitle and title
+    const similarity = compareTwoStrings(cleanTitle(inputTitle?.toLowerCase() || ''), title);
+
+    if (similarity > 0.6) {
+      results.push({ ...titleObj, similarity });
+    }
+  });
+
+  const isSubAvailable = results.some(result => result.episodes && result.episodes.sub > 0);
+
+  // If episodes.sub is available, sort the results
+  if (isSubAvailable) {
+    return results.sort((a, b) => {
+      // First sort by similarity in descending order
+      if (b.similarity !== a.similarity) {
+        return b.similarity - a.similarity;
+      }
+      // If similarity is the same, sort by episodes.sub in descending order
+      return (b.episodes?.sub || 0) - (a.episodes?.sub || 0);
+    });
+  }
+
+  // If episodes.sub is not available, return the original list
+  return results.sort((a, b) => b.similarity - a.similarity);
+}
+
+export function removeSpecialChars(title: string | undefined | null): string {
+  if (!title) return '';
+
+  return title
+    .replace(/[^A-Za-z0-9!@#$%^&*()\-= ]/gim, ' ')
+    .replace(/[^A-Za-z0-9\-= ]/gim, '')
+    .replace(/ {2}/g, ' ');
+}
+
+export function transformSpecificVariations(title: string | undefined | null): string {
+  if (!title) return '';
+
+  return title.replace(/yuu/g, 'yu').replace(/ ou/g, ' oh');
+}
+
+function romanToArabic(roman: string): number {
+  const romanMap: Record<string, number> = {
+    i: 1,
+    v: 5,
+    x: 10,
+    l: 50,
+    c: 100,
+    d: 500,
+    m: 1000,
+  };
+
+  roman = roman.toLowerCase();
+  let result = 0;
+
+  for (let i = 0; i < roman.length; i++) {
+    const current = romanMap[roman[i]!]!;
+    const next = romanMap[roman[i + 1]!];
+
+    if (next && current < next) {
+      result += next - current;
+      i++;
+    } else {
+      result += current;
+    }
+  }
+
+  return result;
+}
+
+export function cleanTitle(title: string | undefined | null): string {
+  if (!title) return '';
+
+  return transformSpecificVariations(
+    removeSpecialChars(
+      title
+        .replace(/[^A-Za-z0-9!@#$%^&*() ]/gim, ' ')
+        .replace(/(th|rd|nd|st) (Season|season)/gim, '')
+        .replace(/\([^\(]*\)$/gim, '')
+        .replace(/season/g, '')
+        .replace(/\b(IX|IV|V?I{0,3})\b/gi, (match: any) => romanToArabic(match).toString())
+        .replace(/ {2}/g, ' ')
+        .replace(/"/g, '')
+        .trimEnd()
+    )
+  );
+}
