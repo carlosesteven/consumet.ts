@@ -17,6 +17,7 @@ class Hianime extends models_1.AnimeParser {
          * @returns Promise<IAnimeInfo>
          */
         this.fetchAnimeInfo = async (id) => {
+            var _a;
             const info = {
                 id: id,
                 title: '',
@@ -30,6 +31,11 @@ class Hianime extends models_1.AnimeParser {
                 info.alID = Number(anilist_id);
                 info.title = $('h2.film-name > a.text-white').text();
                 info.japaneseTitle = $('div.anisc-info div:nth-child(2) span.name').text();
+                const newJapaneseTitle = (_a = $('h2.film-name a.dynamic-name').attr('data-jname')) === null || _a === void 0 ? void 0 : _a.trim();
+                if (newJapaneseTitle) {
+                    info.japaneseTitle = info.title;
+                    info.title = newJapaneseTitle;
+                }
                 info.image = $('img.film-poster-img').attr('src');
                 info.description = $('div.film-description').text().trim();
                 // Movie, TV, OVA, ONA, Special, Music

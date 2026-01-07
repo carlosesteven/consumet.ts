@@ -535,6 +535,13 @@ class Hianime extends AnimeParser {
       info.alID = Number(anilist_id);
       info.title = $('h2.film-name > a.text-white').text();
       info.japaneseTitle = $('div.anisc-info div:nth-child(2) span.name').text();
+
+      const newJapaneseTitle = $('h2.film-name a.dynamic-name').attr('data-jname')?.trim();
+      if (newJapaneseTitle) {
+        info.japaneseTitle = info.title;
+        info.title = newJapaneseTitle;
+      }
+
       info.image = $('img.film-poster-img').attr('src');
       info.description = $('div.film-description').text().trim();
       // Movie, TV, OVA, ONA, Special, Music
