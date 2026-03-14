@@ -12,7 +12,6 @@ class VidCloud extends models_1.VideoExtractor {
         this.serverName = 'VidCloud';
         this.sources = [];
         this.extract = async (videoUrl) => {
-            var _a, _b, _c;
             try {
                 const result = {
                     sources: [],
@@ -21,7 +20,7 @@ class VidCloud extends models_1.VideoExtractor {
                 const decUrl = new URL('https://dec.eatmynerds.live');
                 decUrl.searchParams.set('url', videoUrl.href);
                 const { data: initialData } = await axios_1.default.get(decUrl.toString());
-                if (!((_a = initialData === null || initialData === void 0 ? void 0 : initialData.sources) === null || _a === void 0 ? void 0 : _a.length)) {
+                if (!initialData?.sources?.length) {
                     throw new Error('No sources found from the initial request.');
                 }
                 let masterPlaylistUrl = initialData.sources[0].file;
@@ -58,12 +57,9 @@ class VidCloud extends models_1.VideoExtractor {
                                     quality: 'auto',
                                 },
                             ],
-                            subtitles: ((_b = initialData.tracks) === null || _b === void 0 ? void 0 : _b.map((s) => {
-                                var _a;
-                                return ({
-                                    url: s.file,
-                                    lang: (_a = s.label) !== null && _a !== void 0 ? _a : 'Default',
-                                });
+                            subtitles: initialData.tracks?.map((s) => ({
+                                url: s.file,
+                                lang: s.label ?? 'Default',
                             })) || [],
                         };
                     }
@@ -90,12 +86,9 @@ class VidCloud extends models_1.VideoExtractor {
                 }
                 result.sources = sources;
                 result.subtitles =
-                    ((_c = initialData.tracks) === null || _c === void 0 ? void 0 : _c.map((s) => {
-                        var _a;
-                        return ({
-                            url: s.file,
-                            lang: (_a = s.label) !== null && _a !== void 0 ? _a : 'Default',
-                        });
+                    initialData.tracks?.map((s) => ({
+                        url: s.file,
+                        lang: s.label ?? 'Default',
                     })) || [];
                 return result;
             }

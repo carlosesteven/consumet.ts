@@ -1,5 +1,6 @@
 import { VideoExtractor, IVideo, ISubtitle, ISource } from '../models';
 import { getSourcesV3 } from './megacloud/megacloud.v3';
+import { getSourcesAniwatch } from './megacloud/megacloud.aniwatch';
 
 interface IMegaCloudOutput {
   sources: {
@@ -58,7 +59,7 @@ class MegaCloud extends VideoExtractor {
     }
   };
 
-  async extract_CSC_LAB(embedIframeURL: URL, referer: string = 'https://hianime.to') {
+  async extract_CSC_LAB(embedIframeURL: URL, referer: string = 'https://aniwatchtv.to') {
     try {
       const extractedData: ISource = {
         subtitles: [],
@@ -77,11 +78,13 @@ class MegaCloud extends VideoExtractor {
 
       try {
         console.log('\n- Megacloud: CSC_LAB API');
-        resp = await getSourcesV3(embedIframeURL.href, referer);
-      } catch (e) {
-        console.log('\n- Megacloud: CSC_LAB API failed, falling back to Crawlr');
-        const apiUrl = 'https://crawlr.cc/9D7F1B3E8?url=' + encodeURIComponent(embedIframeURL.href);
-        resp = await this.client.get<IMegaCloudOutput>(apiUrl);
+        resp = await getSourcesAniwatch(embedIframeURL.href, referer);
+      } catch (e: any) {
+        console.log('\n- Megacloud: CSC_LAB API failed, retrying once');
+        console.log('First attempt error message:', e?.message);
+        console.log('First attempt error code:', e?.code);
+        console.log('First attempt full error:', e);
+        resp = await getSourcesAniwatch(embedIframeURL.href, referer);
       }
 
       if (!resp) return extractedData;
@@ -97,10 +100,12 @@ class MegaCloud extends VideoExtractor {
       extractedData.intro = resp.intro ? resp.intro : extractedData.intro;
       extractedData.outro = resp.outro ? resp.outro : extractedData.outro;
 
-      extractedData.subtitles = resp.tracks.map((track: { file: any; label: any; kind: any }) => ({
-        url: track.file,
-        lang: track.label ? track.label : track.kind,
-      }));
+      extractedData.subtitles = Array.isArray(resp.tracks)
+        ? resp.tracks.map((track: { file: any; label: any; kind: any }) => ({
+            url: track.file,
+            lang: track.label ? track.label : track.kind,
+          }))
+        : [];
 
       return {
         intro: extractedData.intro,

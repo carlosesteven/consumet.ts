@@ -63,17 +63,16 @@ class NetMirror extends models_1.MovieParser {
             }
         };
         this.fetchMediaInfo = async (mediaId) => {
-            var _a, _b;
             try {
                 const quickInfo = await this.fetchQuickInfo(mediaId);
-                const isTvShow = (_a = quickInfo.runtime) === null || _a === void 0 ? void 0 : _a.toLowerCase().includes('season');
+                const isTvShow = quickInfo.runtime?.toLowerCase().includes('season');
                 const movieInfo = {
                     id: mediaId,
                     title: '',
                     type: isTvShow ? models_1.TvType.TVSERIES : models_1.TvType.MOVIE,
                     image: `https://imgcdn.kim/poster/780/${mediaId}.jpg`,
                     cover: `https://imgcdn.kim/poster/1920/${mediaId}.jpg`,
-                    genres: ((_b = quickInfo.genre) === null || _b === void 0 ? void 0 : _b.split(', ').map(g => g.trim())) || [],
+                    genres: quickInfo.genre?.split(', ').map(g => g.trim()) || [],
                     duration: quickInfo.runtime,
                     rating: quickInfo.ua ? undefined : undefined,
                 };
@@ -108,7 +107,6 @@ class NetMirror extends models_1.MovieParser {
             ];
         };
         this.fetchEpisodeSources = async (episodeId, mediaId) => {
-            var _a;
             try {
                 const { data } = await this.client.get(`${this.baseUrl}/playlist.php?id=${episodeId}&t=Video&tm=${Date.now()}`, {
                     headers: {
@@ -137,7 +135,9 @@ class NetMirror extends models_1.MovieParser {
                         isM3U8: true,
                     };
                 });
-                const subtitles = (_a = playlist.tracks) === null || _a === void 0 ? void 0 : _a.filter(t => t.kind === 'captions').map(t => ({
+                const subtitles = playlist.tracks
+                    ?.filter(t => t.kind === 'captions')
+                    .map(t => ({
                     url: t.file.startsWith('//') ? `https:${t.file}` : t.file,
                     lang: t.label || t.language || 'Unknown',
                 }));

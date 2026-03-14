@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("../models");
-const megacloud_v3_1 = require("./megacloud/megacloud.v3");
+const megacloud_aniwatch_1 = require("./megacloud/megacloud.aniwatch");
 class MegaCloud extends models_1.VideoExtractor {
     constructor() {
         super(...arguments);
         this.serverName = 'MegaCloud';
         this.sources = [];
         this.extract = async (videoUrl) => {
-            var _a, _b, _c;
             try {
                 const apiUrl = 'https://crawlr.cc/9D7F1B3E8?url=' + encodeURIComponent(videoUrl.href);
                 const { data } = await this.client.get(apiUrl);
@@ -18,18 +17,15 @@ class MegaCloud extends models_1.VideoExtractor {
                 for (const src of data.sources) {
                     this.sources.push({
                         url: src.url,
-                        quality: (_a = src.quality) !== null && _a !== void 0 ? _a : 'auto',
+                        quality: src.quality ?? 'auto',
                         isM3U8: src.url.includes('.m3u8'),
                     });
                 }
-                const subtitles = (_c = (_b = data.tracks) === null || _b === void 0 ? void 0 : _b.map(t => {
-                    var _a, _b;
-                    return ({
-                        lang: (_a = t.label) !== null && _a !== void 0 ? _a : 'Unknown',
-                        url: t.file,
-                        kind: (_b = t.kind) !== null && _b !== void 0 ? _b : 'captions',
-                    });
-                })) !== null && _c !== void 0 ? _c : [];
+                const subtitles = data.tracks?.map(t => ({
+                    lang: t.label ?? 'Unknown',
+                    url: t.file,
+                    kind: t.kind ?? 'captions',
+                })) ?? [];
                 return {
                     sources: this.sources,
                     subtitles,
@@ -40,7 +36,7 @@ class MegaCloud extends models_1.VideoExtractor {
             }
         };
     }
-    async extract_CSC_LAB(embedIframeURL, referer = 'https://hianime.to') {
+    async extract_CSC_LAB(embedIframeURL, referer = 'https://aniwatchtv.to') {
         try {
             const extractedData = {
                 subtitles: [],
@@ -57,12 +53,14 @@ class MegaCloud extends models_1.VideoExtractor {
             let resp = null;
             try {
                 console.log('\n- Megacloud: CSC_LAB API');
-                resp = await (0, megacloud_v3_1.getSourcesV3)(embedIframeURL.href, referer);
+                resp = await (0, megacloud_aniwatch_1.getSourcesAniwatch)(embedIframeURL.href, referer);
             }
             catch (e) {
-                console.log('\n- Megacloud: CSC_LAB API failed, falling back to Crawlr');
-                const apiUrl = 'https://crawlr.cc/9D7F1B3E8?url=' + encodeURIComponent(embedIframeURL.href);
-                resp = await this.client.get(apiUrl);
+                console.log('\n- Megacloud: CSC_LAB API failed, retrying once');
+                console.log('First attempt error message:', e?.message);
+                console.log('First attempt error code:', e?.code);
+                console.log('First attempt full error:', e);
+                resp = await (0, megacloud_aniwatch_1.getSourcesAniwatch)(embedIframeURL.href, referer);
             }
             if (!resp)
                 return extractedData;
@@ -75,10 +73,12 @@ class MegaCloud extends models_1.VideoExtractor {
             }
             extractedData.intro = resp.intro ? resp.intro : extractedData.intro;
             extractedData.outro = resp.outro ? resp.outro : extractedData.outro;
-            extractedData.subtitles = resp.tracks.map((track) => ({
-                url: track.file,
-                lang: track.label ? track.label : track.kind,
-            }));
+            extractedData.subtitles = Array.isArray(resp.tracks)
+                ? resp.tracks.map((track) => ({
+                    url: track.file,
+                    lang: track.label ? track.label : track.kind,
+                }))
+                : [];
             return {
                 intro: extractedData.intro,
                 outro: extractedData.outro,
