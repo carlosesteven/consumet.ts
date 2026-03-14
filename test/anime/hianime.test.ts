@@ -3,7 +3,7 @@ import { ANIME } from '../../src/providers';
 jest.setTimeout(120000);
 
 const hianime = new ANIME.Hianime();
-/*
+
 test('Search: returns a filled array of anime list', async () => {
   const data = await hianime.search('Overlord IV');
   expect(data.results).not.toEqual([]);
@@ -119,7 +119,7 @@ test('fetchAnimeInfo: returns a filled object of anime data', async () => {
   expect(data).not.toBeNull();
   expect(data.description).not.toBeNull();
   expect(data.episodes).not.toEqual([]);
-});*/
+});
 
 test('fetchEpisodeSources: returns a filled object of episode sources', async () => {
   const info = await hianime.fetchAnimeInfo('attack-on-titan-112?ep=3304');

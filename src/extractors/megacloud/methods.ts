@@ -33,9 +33,10 @@ export async function getMegaCloudClientKey(xrax: string): Promise<string | null
     // find the first matching regex
     let pass = null;
     let count = 0;
-    for (let test in regex) {
+    for (let test = 0; test < regex.length; test++) {
       pass = text.match(regex[test]);
       if (pass !== null) {
+        count = test;
         break;
       }
     }
@@ -53,12 +54,12 @@ export async function getMegaCloudClientKey(xrax: string): Promise<string | null
       let p1 = x[0].match(key);
       if (p1 === null) throw new Error('Failed building client key (xyz)');
 
-      let y = pass[0].match(lk_db_regex[0]);
+      let y = pass[0].match(lk_db_regex[1]);
       if (y === null) throw new Error('Failed building client key (xyz)');
       let p2 = y[0].match(key);
       if (p2 === null) throw new Error('Failed building client key (xyz)');
 
-      let z = pass[0].match(lk_db_regex[0]);
+      let z = pass[0].match(lk_db_regex[2]);
       if (z === null) throw new Error('Failed building client key (xyz)');
       let p3 = z[0].match(key);
       if (p3 === null) throw new Error('Failed building client key (xyz)');
