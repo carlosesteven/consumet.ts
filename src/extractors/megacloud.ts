@@ -1,5 +1,5 @@
 import { VideoExtractor, IVideo, ISubtitle, ISource } from '../models';
-import { getSourcesV3 } from './megacloud/megacloud.v3';
+import { getSourcesCSCLAB } from './megacloud/megacloud.csclab';
 import { getSourcesAniwatch } from './megacloud/megacloud.aniwatch';
 
 interface IMegaCloudOutput {
@@ -78,7 +78,7 @@ class MegaCloud extends VideoExtractor {
 
       try {
         console.log('\n- Megacloud: CSC_LAB API');
-        resp = await getSourcesAniwatch(embedIframeURL.href, referer);
+        resp = await getSourcesCSCLAB(embedIframeURL.href, referer);
       } catch (e: any) {
         console.log('\n- Megacloud: CSC_LAB API failed, retrying once');
         console.log('First attempt error message:', e?.message);

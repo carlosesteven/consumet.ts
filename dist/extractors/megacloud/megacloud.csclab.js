@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSourcesV3 = getSourcesV3;
-async function getSourcesV3(embed_url, site) {
+exports.getSourcesCSCLAB = getSourcesCSCLAB;
+async function getSourcesCSCLAB(embed_url, site) {
     const resourceLinkMatch = embed_url.match(/https:\/\/([^/]+)\/embed-2\/(v\d+)\/e-1\/([^?]+)/);
     if (!resourceLinkMatch) {
         throw new Error(`[!] Failed to extract domain and ID from link: ${embed_url}`);
@@ -21,4 +21,4 @@ async function getSourcesV3(embed_url, site) {
         tracks: extractedData.tracks ?? [],
     };
 }
-//# sourceMappingURL=megacloud.v3.js.map
+//# sourceMappingURL=megacloud.csclab.js.map

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const models_1 = require("../models");
+const megacloud_csclab_1 = require("./megacloud/megacloud.csclab");
 const megacloud_aniwatch_1 = require("./megacloud/megacloud.aniwatch");
 class MegaCloud extends models_1.VideoExtractor {
     constructor() {
@@ -53,7 +54,7 @@ class MegaCloud extends models_1.VideoExtractor {
             let resp = null;
             try {
                 console.log('\n- Megacloud: CSC_LAB API');
-                resp = await (0, megacloud_aniwatch_1.getSourcesAniwatch)(embedIframeURL.href, referer);
+                resp = await (0, megacloud_csclab_1.getSourcesCSCLAB)(embedIframeURL.href, referer);
             }
             catch (e) {
                 console.log('\n- Megacloud: CSC_LAB API failed, retrying once');

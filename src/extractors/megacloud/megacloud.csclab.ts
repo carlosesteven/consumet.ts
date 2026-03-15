@@ -1,4 +1,4 @@
-export async function getSourcesV3(embed_url: string, site: string) {
+export async function getSourcesCSCLAB(embed_url: string, site: string) {
   const resourceLinkMatch = embed_url.match(/https:\/\/([^/]+)\/embed-2\/(v\d+)\/e-1\/([^?]+)/);
 
   if (!resourceLinkMatch) {
