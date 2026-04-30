@@ -465,18 +465,47 @@ class AnimeKai extends AnimeParser {
     }
 
     try {
-      const servers = await this.fetchEpisodeServers(episodeId, subOrDub);
-      const i = servers.findIndex(s => s.name.toLowerCase().includes(server)); //for now only megaup is available, hence directly using it
+      const slug = episodeId.split('$ep=')[0];
+      const token = episodeId.split('$token=')[1];
 
-      if (i === -1) {
-        throw new Error(`Server ${server} not found`);
+      if (!slug || !token) {
+        throw new Error(`Invalid episodeId: ${episodeId}`);
       }
 
-      const serverUrl: URL = new URL(servers[i].url);
-      const sources = await this.fetchEpisodeSources(serverUrl.href, server, subOrDub);
-      sources.intro = servers[i]?.intro as Intro;
-      sources.outro = servers[i]?.outro as Intro;
-      return sources;
+      const watchPath = `/watch/${slug}`;
+
+      const { data } = await this.client.get(
+        `http://localhost:8080/videos?watch_path=${encodeURIComponent(
+          watchPath
+        )}&episode_token=${encodeURIComponent(token)}&limit=3`
+      );
+
+      const items = data.items || [];
+
+      if (!items.length) {
+        throw new Error('No sources found');
+      }
+
+      const itemWithSubtitles = items.find(
+        (item: any) => Array.isArray(item.subtitles) && item.subtitles.length > 0
+      );
+
+      const result: ISource = {
+        headers: items[0].headers,
+        sources: items.map((item: any) => ({
+          url: item.url,
+          quality: item.quality.split('|').pop()?.trim(),
+          isM3U8: item.url.includes('.m3u8') || item.url.endsWith('m3u8'),
+        })),
+        subtitles:
+          itemWithSubtitles?.subtitles?.map((sub: any) => ({
+            kind: 'captions',
+            url: sub.url,
+            lang: sub.label,
+          })) || [],
+      };
+
+      return result;
     } catch (err) {
       throw new Error((err as Error).message);
     }

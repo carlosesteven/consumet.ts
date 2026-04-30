@@ -73,3 +73,29 @@ test('fetchSearchSuggestions: returns a filled array of anime list', async () =>
   const data = await animekai.fetchSearchSuggestions('jar');
   expect(data.results).not.toEqual([]);
 });
+
+test('fetchEpisodeSources: returns valid streaming sources from API', async () => {
+  const search = await animekai.search('Naruto');
+  expect(search.results.length).toBeGreaterThan(0);
+
+  const anime = search.results[0];
+
+  const info = await animekai.fetchAnimeInfo(anime.id);
+
+  expect(info.episodes?.length).toBeGreaterThan(0);
+
+  const episode = info.episodes![0];
+
+  const sources = await animekai.fetchEpisodeSources(episode.id);
+
+  expect(sources).toBeDefined();
+  expect(sources.sources).toBeDefined();
+  expect(sources.sources.length).toBeGreaterThan(0);
+
+  expect(sources.sources[0].url).toContain('m3u8');
+
+  expect(sources.headers).toBeDefined();
+  expect(sources.headers?.Referer).toBeDefined();
+
+  console.log('Sources:', sources);
+});

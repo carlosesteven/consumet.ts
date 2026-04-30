@@ -162,16 +162,32 @@ class AnimeKai extends models_1.AnimeParser {
                 }
             }
             try {
-                const servers = await this.fetchEpisodeServers(episodeId, subOrDub);
-                const i = servers.findIndex(s => s.name.toLowerCase().includes(server)); //for now only megaup is available, hence directly using it
-                if (i === -1) {
-                    throw new Error(`Server ${server} not found`);
+                const slug = episodeId.split('$ep=')[0];
+                const token = episodeId.split('$token=')[1];
+                if (!slug || !token) {
+                    throw new Error(`Invalid episodeId: ${episodeId}`);
                 }
-                const serverUrl = new URL(servers[i].url);
-                const sources = await this.fetchEpisodeSources(serverUrl.href, server, subOrDub);
-                sources.intro = servers[i]?.intro;
-                sources.outro = servers[i]?.outro;
-                return sources;
+                const watchPath = `/watch/${slug}`;
+                const { data } = await this.client.get(`http://localhost:8080/videos?watch_path=${encodeURIComponent(watchPath)}&episode_token=${encodeURIComponent(token)}&limit=3`);
+                const items = data.items || [];
+                if (!items.length) {
+                    throw new Error('No sources found');
+                }
+                const itemWithSubtitles = items.find((item) => Array.isArray(item.subtitles) && item.subtitles.length > 0);
+                const result = {
+                    headers: items[0].headers,
+                    sources: items.map((item) => ({
+                        url: item.url,
+                        quality: item.quality.split('|').pop()?.trim(),
+                        isM3U8: item.url.includes('.m3u8') || item.url.endsWith('m3u8'),
+                    })),
+                    subtitles: itemWithSubtitles?.subtitles?.map((sub) => ({
+                        kind: 'captions',
+                        url: sub.url,
+                        lang: sub.label,
+                    })) || [],
+                };
+                return result;
             }
             catch (err) {
                 throw new Error(err.message);
