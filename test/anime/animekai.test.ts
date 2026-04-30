@@ -82,6 +82,8 @@ test('fetchEpisodeSources: returns valid streaming sources from API', async () =
 
   const info = await animekai.fetchAnimeInfo(anime.id);
 
+  console.log('Info:', info);
+
   expect(info.episodes?.length).toBeGreaterThan(0);
 
   const episode = info.episodes![0];

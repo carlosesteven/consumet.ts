@@ -72,6 +72,10 @@ class MangaHere extends models_1.MangaParser {
                 if (copyrightHandle) {
                     throw Error(copyrightHandle.input?.trim());
                 }
+                /*const copyrightHandle = $('p.detail-block-content').text().match('Dear user');
+                if (copyrightHandle) {
+                  throw Error(copyrightHandle.input);
+                }*/
                 const bar = $('script[src*=chapter_bar]').data();
                 const html = $.html();
                 if (typeof bar !== 'undefined') {
